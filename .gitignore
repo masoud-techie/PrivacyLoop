@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Everything below contains your personal data or secrets. Never commit it.
+config.json
+privacyloop.db
+*.db
+outbox/
+
+# Credentials
+.env
+*.env
+.env.*
+!.env.example

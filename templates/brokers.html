@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+  <div class="row-between">
+    <div>
+      <h1>Brokers</h1>
+      <p class="muted">Your requests will cite <b>{{ law }}</b>.
+        {% if law == 'NONE' %}
+          Your state has no consumer deletion statute yet, so letters lean on the
+          broker's own privacy policy plus CCPA, which the big ones apply nationally.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="filters">
+    <a class="chip {% if not level %}on{% endif %}" href="{{ url_for('brokers_view', category=category) }}">All</a>
+    {% for lv in ['certain', 'likely', 'possible', 'unlikely'] %}
+      <a class="chip {% if level == lv %}on{% endif %}"
+         href="{{ url_for('brokers_view', level=lv, category=category) }}">{{ lv }}</a>
+    {% endfor %}
+    <span class="spacer"></span>
+    <a class="chip {% if not category %}on{% endif %}" href="{{ url_for('brokers_view', level=level) }}">Any type</a>
+    {% for key, label in categories.items() %}
+      <a class="chip {% if category == key %}on{% endif %}"
+         href="{{ url_for('brokers_view', level=level, category=key) }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('bulk_compose') }}">
+<div class="card">
+  <div class="row-between sticky-actions">
+    <label class="check"><input type="checkbox" id="selectAll"><span>Select all shown</span></label>
+    <button class="btn btn-primary" type="submit">Queue opt-out requests for selected</button>
+  </div>
+
+  <table class="brokers">
+    <tr>
+      <th></th><th>Broker</th><th>Likelihood</th><th>What we'll ask for</th>
+      <th>Look me up</th><th>Found?</th>
+    </tr>
+    {% for b in brokers %}
+    <tr class="{% if b.status == 'not_found' %}dim{% endif %}">
+      <td>
+        {% if b.id not in open_ids %}
+          <input type="checkbox" class="sel" name="broker_ids" value="{{ b.id }}"
+                 {% if b.likelihood in ('certain', 'likely') %}checked{% endif %}>
+        {% else %}
+          <span class="tick" title="Request already open">&#10003;</span>
+        {% endif %}
+      </td>
+      <td>
+        <b>{{ b.name }}</b>
+        <div class="small muted">{{ b.category_label }}{% if b.fcra %} &middot; <span class="fcra">FCRA</span>{% endif %}</div>
+        {% if b.notes %}<div class="small note">{{ b.notes }}</div>{% endif %}
+      </td>
+      <td>
+        <span class="tag tag-{{ b.likelihood }}">{{ b.likelihood }}</span>
+        <div class="small muted">{{ b.reason }}</div>
+      </td>
+      <td>
+        <div>{{ b.action_label }}</div>
+        <div class="small muted">via {{ b.method }}</div>
+      </td>
+      <td>
+        {% if b.search_url %}
+          <a class="btn btn-sm" href="{{ b.search_url }}" target="_blank" rel="noopener noreferrer">Search &#8599;</a>
+        {% else %}<span class="muted small">-</span>{% endif %}
+      </td>
+      <td>
+        <div class="statusbtns">
+          {% for st, lbl in [('found', 'Yes'), ('not_found', 'No'), ('skipped', 'Skip')] %}
+          <button class="btn btn-sm {% if b.status == st %}on{% endif %}"
+                  formaction="{{ url_for('broker_status', broker_id=b.id) }}"
+                  formmethod="post" name="state" value="{{ st }}"
+                  formnovalidate>{{ lbl }}</button>
+          {% endfor %}
+        </div>
+        <a class="small" href="{{ url_for('compose', broker_id=b.id) }}">compose one &rarr;</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+</form>
+
+<script>
+document.getElementById('selectAll').addEventListener('change', e => {
+  document.querySelectorAll('.sel').forEach(c => c.checked = e.target.checked);
+});
+</script>
+{% endblock %}

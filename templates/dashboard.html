@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if not profile.full_name %}
+  <div class="card hero">
+    <h1>Let's find out who's holding your data.</h1>
+    <p>PrivacyLoop keeps a catalogue of {{ total_brokers }} data brokers, works out which
+       ones almost certainly have a file on you, and generates the statute-citing
+       deletion requests that actually get processed.</p>
+    <a class="btn btn-primary" href="{{ url_for('profile_view') }}">Set up your profile</a>
+  </div>
+{% else %}
+
+<div class="stats">
+  <div class="stat"><b>{{ exposed|length }}</b><span>brokers likely hold you</span></div>
+  <div class="stat"><b>{{ stats.total }}</b><span>requests filed</span></div>
+  <div class="stat"><b>{{ stats.by_status.get('completed', 0) }}</b><span>confirmed deleted</span></div>
+  <div class="stat {% if stats.overdue %}stat-bad{% endif %}"><b>{{ stats.overdue }}</b><span>past deadline</span></div>
+</div>
+
+{% if overdue %}
+<div class="card">
+  <h2>Past their legal deadline</h2>
+  <p class="muted">These brokers blew the statutory response window. That's a
+     complaint you can actually file.</p>
+  <table>
+    {% for r in overdue %}
+    <tr>
+      <td><a href="{{ url_for('request_view', rid=r.id) }}">{{ r.broker_name }}</a></td>
+      <td class="muted">{{ r.law }}</td>
+      <td class="bad">{{ (r.due_at|daysleft)|abs }} days overdue</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="row-between">
+    <h2>Your exposure</h2>
+    <a class="btn" href="{{ url_for('brokers_view') }}">Review all brokers &rarr;</a>
+  </div>
+  <table>
+    <tr><th>Broker</th><th>Type</th><th>Why they have you</th><th></th></tr>
+    {% for b in exposed[:12] %}
+    <tr>
+      <td><b>{{ b.name }}</b></td>
+      <td class="muted">{{ b.category_label }}</td>
+      <td class="muted small">{{ b.reason }}</td>
+      <td><span class="tag tag-{{ b.likelihood }}">{{ b.likelihood }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if recent %}
+<div class="card">
+  <h2>Recent requests</h2>
+  <table>
+    {% for r in recent %}
+    <tr>
+      <td><a href="{{ url_for('request_view', rid=r.id) }}">{{ r.broker_name }}</a></td>
+      <td><span class="tag tag-status-{{ r.status }}">{{ r.status }}</span></td>
+      <td class="muted small">
+        {% if r.due_at and r.status in ('sent', 'acknowledged') %}
+          {% set d = r.due_at|daysleft %}
+          {% if d is not none and d >= 0 %}{{ d }} days left to respond{% else %}overdue{% endif %}
+        {% else %}{{ r.created_at|humandate }}{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

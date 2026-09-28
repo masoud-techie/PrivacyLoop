@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Requests</h1>
+  <div class="filters">
+    <a class="chip {% if not status %}on{% endif %}" href="{{ url_for('requests_view') }}">All</a>
+    {% for s in ['draft', 'sent', 'acknowledged', 'needs_action', 'completed', 'rejected'] %}
+      <a class="chip {% if status == s %}on{% endif %}" href="{{ url_for('requests_view', status=s) }}">{{ s }}</a>
+    {% endfor %}
+  </div>
+
+  {% if not requests %}
+    <p class="muted">Nothing here yet. Pick brokers on the
+       <a href="{{ url_for('brokers_view') }}">Brokers</a> page and queue some requests.</p>
+  {% else %}
+  <table>
+    <tr><th>Broker</th><th>Status</th><th>Basis</th><th>Channel</th><th>Sent</th><th>Deadline</th></tr>
+    {% for r in requests %}
+    <tr>
+      <td><a href="{{ url_for('request_view', rid=r.id) }}"><b>{{ r.broker_name }}</b></a>
+          <div class="small muted">{{ r.action }}</div></td>
+      <td><span class="tag tag-status-{{ r.status }}">{{ r.status }}</span></td>
+      <td class="muted small">{{ r.law }}</td>
+      <td class="muted small">{{ r.channel }}</td>
+      <td class="muted small">{{ r.sent_at|humandate }}</td>
+      <td class="small">
+        {% if r.due_at and r.status in ('sent', 'acknowledged') %}
+          {% set d = r.due_at|daysleft %}
+          {% if d is not none and d < 0 %}<span class="bad">{{ d|abs }}d overdue</span>
+          {% else %}{{ d }}d left{% endif %}
+        {% else %}<span class="muted">-</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

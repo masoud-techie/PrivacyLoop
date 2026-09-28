@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Your profile</h1>
+  <p class="muted">Two jobs: work out which brokers hold you, and give them enough
+     to find your record. Stored in a SQLite file on this machine only.
+     <strong>Past addresses matter most</strong> &mdash; that's the field brokers
+     actually match on, and the one people forget.</p>
+
+  <form method="post" class="form">
+    <label>Full legal name
+      <input name="full_name" value="{{ profile.full_name }}" required
+             placeholder="Jane Q. Smith">
+    </label>
+
+    <label>Other names used <span class="hint">one per line &mdash; maiden name, nicknames, misspellings brokers use</span>
+      <textarea name="aliases" rows="3">{{ profile.aliases }}</textarea>
+    </label>
+
+    <div class="grid2">
+      <label>Email addresses <span class="hint">one per line, including old ones</span>
+        <textarea name="emails" rows="3">{{ profile.emails }}</textarea>
+      </label>
+      <label>Phone numbers <span class="hint">one per line</span>
+        <textarea name="phones" rows="3">{{ profile.phones }}</textarea>
+      </label>
+    </div>
+
+    <label>Addresses <span class="hint">one per line, current first, then every previous address you can remember</span>
+      <textarea name="addresses" rows="5"
+        placeholder="123 Main St, Springfield, IL 62701&#10;456 Oak Ave, Apt 2, Chicago, IL 60601">{{ profile.addresses }}</textarea>
+    </label>
+
+    <div class="grid3">
+      <label>Year of birth <span class="hint">optional, helps disambiguate</span>
+        <input name="birth_year" value="{{ profile.birth_year }}" placeholder="1990">
+      </label>
+      <label>State / region <span class="hint">2-letter code picks your statute</span>
+        <input name="state" value="{{ profile.state }}" placeholder="CA">
+      </label>
+      <label>Country
+        <input name="country" value="{{ profile.country or 'US' }}" placeholder="US">
+      </label>
+    </div>
+
+    <label>Reply-to email <span class="hint">where brokers should confirm. Consider an alias you can burn.</span>
+      <input name="reply_email" type="email" value="{{ profile.reply_email }}">
+    </label>
+
+    <fieldset>
+      <legend>Which of these are true?</legend>
+      <p class="hint">This is how the app infers exposure. A broker's business model
+         tells you who it holds &mdash; if you have a US credit file, the risk bureaus
+         have you, no scraping required.</p>
+      {% for key, label in traits %}
+        <label class="check">
+          <input type="checkbox" name="traits" value="{{ key }}"
+                 {% if key in profile.traits %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <button class="btn btn-primary" type="submit">Save &amp; scan</button>
+  </form>
+</div>
+{% endblock %}

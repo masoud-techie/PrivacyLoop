@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+  <div class="row-between">
+    <div>
+      <h1>{{ req.broker_name }}</h1>
+      <p class="muted">{{ req.action }} &middot; cites {{ req.law }} &middot; created {{ req.created_at|humandate }}</p>
+    </div>
+    <span class="tag tag-status-{{ req.status }} big">{{ req.status }}</span>
+  </div>
+
+  {% if req.due_at and req.status in ('sent', 'acknowledged') %}
+    {% set d = req.due_at|daysleft %}
+    <div class="banner {% if d is not none and d < 0 %}banner-bad{% endif %}">
+      {% if d is not none and d >= 0 %}
+        Response due {{ req.due_at|humandate }} &mdash; {{ d }} days left under {{ req.law }}.
+      {% else %}
+        <b>Overdue by {{ d|abs }} days.</b> {{ req.broker_name }} missed the statutory
+        window. Send a follow-up, then consider a complaint to your Attorney General
+        or the California Privacy Protection Agency.
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% if req.channel == 'form' %}
+<div class="card">
+  <h2>This broker only takes web forms</h2>
+  <p class="muted">No privacy inbox that reliably works, so you submit their form.
+     The app can't do it for you &mdash; these pages sit behind CAPTCHAs and their
+     terms forbid automation. Here's everything you'll need to paste, and the
+     button below records that you did it so the deadline clock starts.</p>
+
+  <div class="paste">
+    <div class="paste-row"><span>Name</span><code>{{ profile.full_name }}</code></div>
+    {% for e in profile.emails.splitlines() if e.strip() %}
+      <div class="paste-row"><span>Email</span><code>{{ e }}</code></div>
+    {% endfor %}
+    {% for p in profile.phones.splitlines() if p.strip() %}
+      <div class="paste-row"><span>Phone</span><code>{{ p }}</code></div>
+    {% endfor %}
+    {% for a in profile.addresses.splitlines() if a.strip() %}
+      <div class="paste-row"><span>Address</span><code>{{ a }}</code></div>
+    {% endfor %}
+    {% if profile.birth_year %}
+      <div class="paste-row"><span>Birth year</span><code>{{ profile.birth_year }}</code></div>
+    {% endif %}
+  </div>
+
+  {% if broker.optout_url %}
+  <a class="btn btn-primary" href="{{ broker.optout_url }}" target="_blank" rel="noopener noreferrer">
+    Open {{ broker.name }}'s opt-out form &#8599;
+  </a>
+  {% endif %}
+
+  {% if req.status == 'draft' %}
+  <form method="post" action="{{ url_for('request_mark_submitted', rid=req.id) }}" class="inline-form">
+    <input name="detail" placeholder="Confirmation number or note (optional)">
+    <button class="btn" type="submit">I submitted it &rarr; start the clock</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>The letter</h2>
+  {% if req.status == 'draft' %}
+    <form method="post" action="{{ url_for('request_edit', rid=req.id) }}" class="form">
+      <div class="grid2">
+        <label>To<input name="to_email" value="{{ req.to_email }}"></label>
+        <label>Subject<input name="subject" value="{{ req.subject }}"></label>
+      </div>
+      <label>Body<textarea name="body" rows="24" class="mono">{{ req.body }}</textarea></label>
+      <button class="btn" type="submit">Save edits</button>
+    </form>
+  {% else %}
+    <div class="readonly"><b>To:</b> {{ req.to_email }}<br><b>Subject:</b> {{ req.subject }}</div>
+    <pre class="letter">{{ req.body }}</pre>
+  {% endif %}
+</div>
+
+{% if req.status == 'draft' and req.channel == 'email' %}
+<div class="card">
+  <h2>Send</h2>
+  {% if cfg.dry_run %}
+    <div class="banner">
+      <b>Dry run is on.</b> Nothing will actually be emailed &mdash; the app writes an
+      .eml file to <code>outbox/</code> instead. Set <code>"dry_run": false</code> in
+      <code>config.json</code> when you're ready to send for real.
+    </div>
+  {% elif not mail_ready %}
+    <div class="banner">No SMTP configured. Download the .eml below and send it from
+       your own mail client instead.</div>
+  {% endif %}
+  <form method="post" action="{{ url_for('request_send', rid=req.id) }}">
+    <label class="check">
+      <input type="checkbox" name="confirm" value="yes" required>
+      <span>I've read this letter and I want to send it to <b>{{ req.to_email or '(no address)' }}</b></span>
+    </label>
+    <button class="btn btn-primary" type="submit">Send opt-out request</button>
+    <a class="btn" href="{{ url_for('request_eml', rid=req.id) }}">Download .eml instead</a>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Status</h2>
+  <form method="post" action="{{ url_for('request_status', rid=req.id) }}" class="inline-form">
+    <select name="status">
+      {% for s in ['sent', 'acknowledged', 'needs_action', 'completed', 'rejected'] %}
+        <option value="{{ s }}" {% if req.status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <input name="note" placeholder="What did they say?">
+    <button class="btn" type="submit">Update</button>
+  </form>
+
+  <h3>History</h3>
+  <ul class="timeline">
+    {% for e in req.events %}
+      <li><span class="muted small">{{ e.ts|humandate }}</span> <b>{{ e.kind }}</b> {{ e.detail }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

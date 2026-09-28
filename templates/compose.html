@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Request to {{ broker.name }}</h1>
+  <p class="muted">{{ broker.notes }}</p>
+  <form method="post" class="form">
+    <div class="grid3">
+      <label>Action
+        <input name="action" value="{{ pkg.action }}" readonly>
+      </label>
+      <label>Legal basis
+        <input name="law" value="{{ pkg.law }}" readonly>
+      </label>
+      <label>Channel
+        <select name="channel">
+          <option value="email" {% if pkg.channel == 'email' %}selected{% endif %}>Email</option>
+          <option value="form" {% if pkg.channel == 'form' %}selected{% endif %}>Their web form</option>
+        </select>
+      </label>
+    </div>
+    <label>To
+      <input name="to_email" value="{{ pkg.to_email }}" placeholder="privacy@{{ broker.domain }}">
+    </label>
+    <label>Subject
+      <input name="subject" value="{{ pkg.subject }}">
+    </label>
+    <label>Body
+      <textarea name="body" rows="26" class="mono">{{ pkg.body }}</textarea>
+    </label>
+    <button class="btn btn-primary" type="submit">Save draft</button>
+  </form>
+</div>
+{% endblock %}

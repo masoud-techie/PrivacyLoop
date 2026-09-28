@@ -1,0 +1,20 @@
+{
+  "_comment": "Copy to config.json and edit. Keep dry_run true until you have read a generated letter end to end.",
+
+  "smtp_host": "smtp.gmail.com",
+  "smtp_port": 587,
+  "smtp_user": "you@gmail.com",
+  "smtp_pass": "",
+  "from_name": "Jane Smith",
+  "from_email": "you@gmail.com",
+  "use_tls": true,
+  "dry_run": true,
+
+  "_notes": [
+    "Leave smtp_pass empty and set the PRIVACYLOOP_SMTP_PASS environment variable instead.",
+    "Gmail needs an App Password, not your account password: https://myaccount.google.com/apppasswords",
+    "Outlook/Office365: smtp.office365.com port 587, use_tls true.",
+    "use_tls false means implicit SSL on port 465 instead of STARTTLS on 587.",
+    "Send from an address you can live with brokers having. They already have it."
+  ]
+}
